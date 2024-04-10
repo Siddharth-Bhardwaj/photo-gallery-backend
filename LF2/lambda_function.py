@@ -4,9 +4,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 def lambda_handler(event, context):
-    print(event)
     lex = boto3.client('lex-runtime')
-    # query_text = event['queryStringParameters']['keyword']
     query_text = event['queryStringParameters']['keyword']
     lex_response = lex.post_text(
         botName='PhotoAlbumBot',
@@ -14,7 +12,6 @@ def lambda_handler(event, context):
         userId='test',
         inputText= query_text
     )
-    # print(lex_response)
     
     keywordA = lex_response['slots']['keywordA']
     keywordB = lex_response['slots']['keywordB']
@@ -62,6 +59,7 @@ def lambda_handler(event, context):
       image_set.add('https://ccphotoalbum.s3.amazonaws.com/'+ doc['_source']['object_key'])
       
     print(image_set)
+    print('test')
     
     return {
         'statusCode': 200,

@@ -6,8 +6,6 @@ from requests.auth import HTTPBasicAuth
 
 def get_labels(bucket, key):
     rekognition = boto3.client("rekognition", region_name="us-east-1")
-    print(bucket)
-    print(key)
     response = rekognition.detect_labels(
         Image={
             "S3Object":
@@ -38,11 +36,8 @@ def get_metadata(bucket, key):
     
 
 def lambda_handler(event, context):
-    print(event)
     bucket = event["Records"][0]["s3"]["bucket"]["name"]
     key = event["Records"][0]["s3"]["object"]["key"]
-    print(bucket)
-    print(key)
     labels_json = get_labels(bucket, key)
     
     auth = HTTPBasicAuth(
@@ -50,7 +45,7 @@ def lambda_handler(event, context):
     headers: dict = {"Content-Type": "application/json"}
     url = "https://search-ccphotoalbum-okobqcqxaiuu5do2ujtwm3o6iu.aos.us-east-1.on.aws" + '/photos/' + 'photo/'+ datetime.now().isoformat() + labels_json['object_key']
     response = requests.post(url, json=labels_json, headers=headers, auth=auth)
-    print('NEW FUNCTION')
+    print('test')
     
     return {
         "statusCode": 200,
