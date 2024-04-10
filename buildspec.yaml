@@ -6,6 +6,7 @@ phases:
       python: 3.12
     commands:
       - pip install -r ./LF1/requirements.txt -t lib
+      - pip install -r ./LF2/requirements.txt -t lib2
   build:
     commands:
       - echo "Zipping deployment package..."
@@ -13,10 +14,16 @@ phases:
       - zip -r9 ../deployment_package.zip .
       - cd ..
       - zip -g deployment_package.zip ./LF1/lambda_function.py
+      - echo "Zipping deployment package..."
+      - cd lib2
+      - zip -r9 ../deployment_package2.zip .
+      - cd ..
+      - zip -g deployment_package2.zip ./LF2/lambda_function.py
   post_build:
     commands:
       - echo "Updating lambda Function..."
       - aws lambda update-function-code --function-name index-photo-v2 --zip-file fileb://deployment_package.zip
+      - aws lambda update-function-code --function-name search-photo-v2 --zip-file fileb://deployment_package2.zip
       - echo "DONE!!"
 
   # post_build:
