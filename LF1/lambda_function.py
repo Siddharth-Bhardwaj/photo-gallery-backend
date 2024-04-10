@@ -4,9 +4,6 @@ from datetime import datetime
 import requests
 from requests.auth import HTTPBasicAuth
 
-# ccphotoalbum
-# Ccphotoalbum@2024
-
 def get_labels(bucket, key):
     rekognition = boto3.client("rekognition", region_name="us-east-1")
     print(bucket)
@@ -18,7 +15,6 @@ def get_labels(bucket, key):
              "Name": key}
         },
         MinConfidence=90, MaxLabels=20)
-    # print(response)
     
     labels = [x['Name'] for x in response["Labels"]]
     metadata = get_metadata(bucket, key)
@@ -38,7 +34,6 @@ def get_labels(bucket, key):
 def get_metadata(bucket, key):
     s3 = boto3.client("s3", region_name="us-east-1")
     response = s3.head_object(Bucket=bucket, Key=key)
-    # print(response)
     return response["Metadata"]
     
 
@@ -46,8 +41,6 @@ def lambda_handler(event, context):
     print(event)
     bucket = event["Records"][0]["s3"]["bucket"]["name"]
     key = event["Records"][0]["s3"]["object"]["key"]
-    # bucket = 'ccphotoalbum'
-    # key = 'bmw_m_wall.jpg'
     print(bucket)
     print(key)
     labels_json = get_labels(bucket, key)
@@ -57,10 +50,7 @@ def lambda_handler(event, context):
     headers: dict = {"Content-Type": "application/json"}
     url = "https://search-ccphotoalbum-okobqcqxaiuu5do2ujtwm3o6iu.aos.us-east-1.on.aws" + '/photos/' + 'photo/'+ datetime.now().isoformat() + labels_json['object_key']
     response = requests.post(url, json=labels_json, headers=headers, auth=auth)
-    print(response)
-    # r.raise_for_status()
-    # logger.debug(
-    #     "{} returned from POST {} - json: {}".format(r.status_code, OS_URL, payload))
+    print('NEW FUNCTION')
     
     return {
         "statusCode": 200,
