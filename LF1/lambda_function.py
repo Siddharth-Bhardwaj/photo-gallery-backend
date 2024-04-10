@@ -4,6 +4,9 @@ from datetime import datetime
 import requests
 from requests.auth import HTTPBasicAuth
 
+# ccphotoalbum
+# Ccphotoalbum@2024
+
 def get_labels(bucket, key):
     rekognition = boto3.client("rekognition", region_name="us-east-1")
     print(bucket)
