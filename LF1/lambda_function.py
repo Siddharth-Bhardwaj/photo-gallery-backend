@@ -45,7 +45,6 @@ def lambda_handler(event, context):
     headers: dict = {"Content-Type": "application/json"}
     url = "https://search-ccphotoalbum-okobqcqxaiuu5do2ujtwm3o6iu.aos.us-east-1.on.aws" + '/photos/' + 'photo/'+ datetime.now().isoformat() + labels_json['object_key']
     response = requests.post(url, json=labels_json, headers=headers, auth=auth)
-    print('test1')
     
     return {
         "statusCode": 200,

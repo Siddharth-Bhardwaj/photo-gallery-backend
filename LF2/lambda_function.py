@@ -59,7 +59,6 @@ def lambda_handler(event, context):
       image_set.add('https://ccphotoalbum.s3.amazonaws.com/'+ doc['_source']['object_key'])
       
     print(image_set)
-    print('test')
     
     return {
         'statusCode': 200,
