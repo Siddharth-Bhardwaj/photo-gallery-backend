@@ -1,323 +1,20 @@
-AWSTemplateFormatVersion: '2010-09-09'
-Description: Template for Photo Gallery
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Template for Photo Gallery"
 
 Resources:
-  ApiGatewayDeployment:
-    UpdateReplacePolicy: "Retain"
-    Type: "AWS::ApiGateway::Deployment"
-    DeletionPolicy: "Retain"
-    Properties:
-      RestApiId:
-        Ref: "ApiGatewayRestApi"
-  S3BucketPolicyCcphotoalbum:
-    UpdateReplacePolicy: "Retain"
-    Type: "AWS::S3::BucketPolicy"
-    DeletionPolicy: "Retain"
-    Properties:
-      Bucket:
-        Ref: "S3BucketCcphotoalbum"
-      PolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-        - Resource: "arn:aws:s3:::ccphotoalbum/*"
-          Action: "s3:GetObject"
-          Effect: "Allow"
-          Principal: "*"
-          Sid: "Stmt1712445730478"
-        Id: "Policy1712445739327"
-  IAMRoleIndexPhotoV2Role:
-    UpdateReplacePolicy: "Retain"
-    Type: "AWS::IAM::Role"
-    DeletionPolicy: "Retain"
-    Properties:
-      Path: "/service-role/"
-      ManagedPolicyArns:
-      - Ref: "IAMManagedPolicyIndexServiceRoleAWSLambdaBasicExecutionRole"
-      - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
-      - "arn:aws:iam::aws:policy/AmazonRekognitionFullAccess"
-      MaxSessionDuration: 3600
-      RoleName: "index-photo-v2-role-q0bd47pi"
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-        - Action: "sts:AssumeRole"
-          Effect: "Allow"
-          Principal:
-            Service: "lambda.amazonaws.com"
-  ApiGatewayUsagePlan:
-    UpdateReplacePolicy: "Retain"
-    Type: "AWS::ApiGateway::UsagePlan"
-    DeletionPolicy: "Retain"
-    Properties:
-      ApiStages:
-      - Stage:
-          Fn::GetAtt:
-          - "ApiGatewayStageDev"
-          - "StageName"
-        ApiId:
-          Ref: "ApiGatewayRestApi"
-        Throttle: {}
-      Quota:
-        Period: "MONTH"
-        Limit: 10000
-        Offset: 0
-      Throttle:
-        BurstLimit: 50
-        RateLimit: 100
-      UsagePlanName: "imageGalleryUsagePlan"
-  LambdaPermissionFunctionSearchPhotoV2:
-    UpdateReplacePolicy: "Retain"
-    Type: "AWS::Lambda::Permission"
-    DeletionPolicy: "Retain"
-    Properties:
-      FunctionName:
-        Fn::GetAtt:
-        - "LambdaFunctionSearchPhotoV2"
-        - "Arn"
-      Action: "lambda:InvokeFunction"
-      SourceArn: "arn:aws:execute-api:us-east-1:550673492243:c18n9k15l8/*/GET/search"
-      Principal: "apigateway.amazonaws.com"
-  IAMManagedPolicyServiceRoleAWSLambdaBasicExecutionRole:
-    UpdateReplacePolicy: "Retain"
-    Type: "AWS::IAM::ManagedPolicy"
-    DeletionPolicy: "Retain"
-    Properties:
-      ManagedPolicyName: "AWSLambdaBasicExecutionRole-43f9bf1e-4709-448b-99cc-9fb6b79d08b9"
-      Path: "/service-role/"
-      Description: ""
-      Groups: []
-      PolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-        - Resource: "arn:aws:logs:us-east-1:550673492243:*"
-          Action: "logs:CreateLogGroup"
-          Effect: "Allow"
-        - Resource:
-          - "arn:aws:logs:us-east-1:550673492243:log-group:/aws/lambda/search-photo-v2:*"
-          Action:
-          - "logs:CreateLogStream"
-          - "logs:PutLogEvents"
-          Effect: "Allow"
-      Roles:
-      - "search-photo-v2-role-9v8ihtws"
-      Users: []
-  ApiGatewayStageDev:
-    UpdateReplacePolicy: "Retain"
-    Type: "AWS::ApiGateway::Stage"
-    DeletionPolicy: "Retain"
-    Properties:
-      RestApiId:
-        Ref: "ApiGatewayRestApi"
-      DeploymentId:
-        Fn::GetAtt:
-        - "ApiGatewayDeployment"
-        - "DeploymentId"
-      StageName: "dev"
-      CacheClusterSize: "0.5"
-      TracingEnabled: false
-      CacheClusterEnabled: false
-  ApiGatewayApiKey:
-    UpdateReplacePolicy: "Retain"
-    Type: "AWS::ApiGateway::ApiKey"
-    DeletionPolicy: "Retain"
-    Properties:
-      StageKeys: []
-      Value: "beuV2SuzVr6ZqoI6VP0cA4ImJSVEXlEk6vlOtTcx"
-      Enabled: true
-      Name: "imageGalleryApiKey"
-  LambdaPermissionFunctionIndexPhotoV2:
-    UpdateReplacePolicy: "Retain"
-    Type: "AWS::Lambda::Permission"
-    DeletionPolicy: "Retain"
-    Properties:
-      FunctionName:
-        Fn::GetAtt:
-        - "LambdaFunctionIndexPhotoV2"
-        - "Arn"
-      Action: "lambda:InvokeFunction"
-      SourceArn:
-        Fn::GetAtt:
-        - "S3BucketCcphotoalbum"
-        - "Arn"
-      Principal: "s3.amazonaws.com"
-      SourceAccount: "550673492243"
-  S3BucketCcphotoalbum:
-    UpdateReplacePolicy: "Retain"
-    Type: "AWS::S3::Bucket"
-    DeletionPolicy: "Retain"
-    Properties:
-      NotificationConfiguration:
-        QueueConfigurations: []
-        TopicConfigurations: []
-        LambdaConfigurations:
-        - Function:
-            Fn::GetAtt:
-            - "LambdaFunctionIndexPhotoV2"
-            - "Arn"
-          Event: "s3:ObjectCreated:*"
-      PublicAccessBlockConfiguration:
-        RestrictPublicBuckets: false
-        IgnorePublicAcls: false
-        BlockPublicPolicy: false
-        BlockPublicAcls: false
-      BucketName: "ccphotoalbum"
-      OwnershipControls:
-        Rules:
-        - ObjectOwnership: "BucketOwnerEnforced"
-      BucketEncryption:
-        ServerSideEncryptionConfiguration:
-        - BucketKeyEnabled: true
-          ServerSideEncryptionByDefault:
-            SSEAlgorithm: "AES256"
-  LambdaFunctionSearchPhotoV2:
-    UpdateReplacePolicy: "Retain"
-    Type: "AWS::Lambda::Function"
-    DeletionPolicy: "Retain"
-    Properties:
-      MemorySize: 128
-      Description: ""
-      TracingConfig:
-        Mode: "PassThrough"
-      Timeout: 10
-      RuntimeManagementConfig:
-        UpdateRuntimeOn: "Auto"
-      Handler: "lambda_function.lambda_handler"
-      Code:
-        ZipFile: |
-          import json
-          import boto3
-          import requests
-          from requests.auth import HTTPBasicAuth
-
-          def lambda_handler(event, context):
-              lex = boto3.client('lex-runtime')
-              query_text = event['queryStringParameters']['keyword']
-              lex_response = lex.post_text(
-                  botName='PhotoAlbumBot',
-                  botAlias='dev',
-                  userId='test',
-                  inputText= query_text
-              )
-              
-              keywordA = lex_response['slots']['keywordA']
-              keywordB = lex_response['slots']['keywordB']
-              print(keywordA)
-              print(keywordB)
-              if (keywordA is None):
-                  return {'statusCode': 404, 'body': 'Keyword not found'}
-              
-              es_query = {
-                "query": {
-                  "match": {
-                    "labels": keywordA,
-                  }
-                }
-              }
-              if (keywordB is not None):    
-                es_query = {
-                  "query": {
-                    "match": {
-                      "labels": {
-                        "query": keywordA + " " + keywordB,
-                        "operator": "and"
-                      }
-                    }
-                  }
-                }
-              
-              headers: dict = {"Content-Type": "application/json"}
-              url: str = "https://search-ccphotoalbum-okobqcqxaiuu5do2ujtwm3o6iu.aos.us-east-1.on.aws" + "/" + "photos" + "/" + "_search"
-
-              auth = HTTPBasicAuth("ccphotoalbum","Ccphotoalbum@2024")
-              response = requests.get(url, headers=headers, json=es_query, auth=auth)
-              response.raise_for_status()
-              print(response.json())
-              
-              response = response.json()
-              result_count = response['hits']['total']['value']
-              if (result_count < 1):
-                return {
-                  'statusCode': 404,
-                  'body': 'No images found'
-              }
-              image_set = set()
-              for doc in response['hits']['hits']:
-                image_set.add('https://ccphotoalbum.s3.amazonaws.com/'+ doc['_source']['object_key'])
-                
-              print(image_set)
-              print('test')
-              
-              return {
-                  'statusCode': 200,
-                  'headers': {
-                      'Access-Control-Allow-Origin': '*',
-                      'Access-Control-Allow-Methods': 'OPTIONS,POST,GET'
-                  },
-                  'body': json.dumps(list(image_set))
-              }
-
-      Role:
-        Fn::GetAtt:
-        - "IAMRoleSearchPhotoV2Role"
-        - "Arn"
-      FileSystemConfigs: []
-      FunctionName: "search-photo-v2"
-      Runtime: "python3.12"
-      LoggingConfig:
-        LogFormat: "Text"
-        LogGroup: "/aws/lambda/search-photo-v2"
-      EphemeralStorage:
-        Size: 512
-      Architectures:
-      - "x86_64"
-  S3BucketPolicyCcphotoalbumfrontend:
-    UpdateReplacePolicy: "Retain"
-    Type: "AWS::S3::BucketPolicy"
-    DeletionPolicy: "Retain"
-    Properties:
-      Bucket:
-        Ref: "S3BucketCcphotoalbumfrontend"
-      PolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-        - Resource: "arn:aws:s3:::ccphotoalbumfrontend/*"
-          Action: "s3:GetObject"
-          Effect: "Allow"
-          Principal: "*"
-          Sid: "PublicReadGetObject"
-  IAMRoleSearchPhotoV2Role:
-    UpdateReplacePolicy: "Retain"
-    Type: "AWS::IAM::Role"
-    DeletionPolicy: "Retain"
-    Properties:
-      Path: "/service-role/"
-      ManagedPolicyArns:
-      - Ref: "IAMManagedPolicyServiceRoleAWSLambdaBasicExecutionRole"
-      - "arn:aws:iam::aws:policy/AmazonLexFullAccess"
-      MaxSessionDuration: 3600
-      RoleName: "search-photo-v2-role-9v8ihtws"
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-        - Action: "sts:AssumeRole"
-          Effect: "Allow"
-          Principal:
-            Service: "lambda.amazonaws.com"
-  ApiGatewayUsagePlanKey:
-    UpdateReplacePolicy: "Retain"
-    Type: "AWS::ApiGateway::UsagePlanKey"
-    DeletionPolicy: "Retain"
-    Properties:
-      KeyType: "API_KEY"
-      UsagePlanId:
-        Ref: "ApiGatewayUsagePlan"
-      KeyId:
-        Ref: "ApiGatewayApiKey"
   ApiGatewayRestApi:
-    UpdateReplacePolicy: "Retain"
     Type: "AWS::ApiGateway::RestApi"
-    DeletionPolicy: "Retain"
     Properties:
+      Name: "AI Photo Search Test"
+      Description: "AI Photo Search application, built during the Cloud and Big Data course at Columbia University."
+      ApiKeySourceType: "HEADER"
+      BinaryMediaTypes:
+        - "image/jpg"
+        - "image/jpeg"
+        - "image/png"
+      EndpointConfiguration:
+        Types:
+          - "REGIONAL"
       Body:
         swagger: 2.0
         info:
@@ -451,23 +148,160 @@ Resources:
                 type: "array"
                 items:
                   $ref: "#/definitions/Photo"
-      ApiKeySourceType: "HEADER"
-      Description: "AI Photo Search application, built during the Cloud and Big Data"
-      EndpointConfiguration:
-        Types:
-        - "REGIONAL"
-      DisableExecuteApiEndpoint: false
-      BinaryMediaTypes:
-      - "image/jpg"
-      - "image/jpeg"
-      - "image/png"
-      Name: "AI Photo Search"
-  IAMManagedPolicyIndexServiceRoleAWSLambdaBasicExecutionRole:
+
+  ApiGatewayResourceSearch:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt "ApiGatewayRestApi.RootResourceId"
+      PathPart: "searchtest"
+      RestApiId: !Ref ApiGatewayRestApi
+
+  ApiGatewayResourceUpload:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt "ApiGatewayRestApi.RootResourceId"
+      PathPart: "uploadtest"
+      RestApiId: !Ref ApiGatewayRestApi
+
+  ApiGatewayMethod:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      RestApiId: !Ref ApiGatewayRestApi
+      ResourceId: !Ref ApiGatewayResourceSearch
+      HttpMethod: "OPTIONS"
+      AuthorizationType: "NONE"
+      ApiKeyRequired: false
+      RequestParameters: {}
+      MethodResponses:
+        - ResponseParameters:
+            "method.response.header.Access-Control-Allow-Headers": false
+            "method.response.header.Access-Control-Allow-Methods": false
+            "method.response.header.Access-Control-Allow-Origin": false
+          StatusCode: "200"
+      Integration:
+        CacheNamespace: "4vurpg"
+        IntegrationResponses:
+          - ResponseParameters:
+              "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              "method.response.header.Access-Control-Allow-Methods": "'GET,OPTIONS'"
+              "method.response.header.Access-Control-Allow-Origin": "'*'"
+            StatusCode: "200"
+        PassthroughBehavior: "WHEN_NO_MATCH"
+        RequestTemplates:
+          "application/json": '{"statusCode": 200}'
+        TimeoutInMillis: 29000
+        Type: "MOCK"
+
+  ApiGatewayMethod2:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      RestApiId: !Ref ApiGatewayRestApi
+      ResourceId: !Ref ApiGatewayResourceUpload
+      HttpMethod: "PUT"
+      AuthorizationType: "NONE"
+      ApiKeyRequired: true
+      RequestParameters:
+        "method.request.header.x-amz-meta-customLabels": false
+        "method.request.header.x-api-key": true
+        "method.request.path.bucket": true
+        "method.request.path.key": true
+      MethodResponses:
+        - ResponseParameters:
+            "method.response.header.Access-Control-Allow-Origin": false
+          StatusCode: "200"
+      Integration:
+        CacheNamespace: "n462aw"
+        Credentials: !Sub "arn:aws:iam::${AWS::AccountId}:role/ApiGatewayS3Access"
+        IntegrationHttpMethod: "PUT"
+        IntegrationResponses:
+          - ResponseParameters:
+              "method.response.header.Access-Control-Allow-Origin": "'*'"
+            ResponseTemplates: {}
+            StatusCode: "200"
+        PassthroughBehavior: "WHEN_NO_MATCH"
+        RequestParameters:
+          "integration.request.header.x-amz-meta-customLabels": "method.request.header.x-amz-meta-customLabels"
+          "integration.request.path.bucket": "method.request.path.bucket"
+          "integration.request.path.key": "method.request.path.key"
+        TimeoutInMillis: 29000
+        Type: "AWS"
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:s3:path/{bucket}/{key}"
+
+  ApiGatewayMethod3:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      RestApiId: !Ref ApiGatewayRestApi
+      ResourceId: !Ref ApiGatewayResourceUpload
+      HttpMethod: "OPTIONS"
+      AuthorizationType: "NONE"
+      ApiKeyRequired: false
+      RequestParameters: {}
+      MethodResponses:
+        - ResponseParameters:
+            "method.response.header.Access-Control-Allow-Headers": false
+            "method.response.header.Access-Control-Allow-Methods": false
+            "method.response.header.Access-Control-Allow-Origin": false
+          StatusCode: "200"
+      Integration:
+        CacheNamespace: "n462aw"
+        IntegrationResponses:
+          - ResponseParameters:
+              "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,x-amz-meta-customLabels'"
+              "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,PUT'"
+              "method.response.header.Access-Control-Allow-Origin": "'*'"
+            SelectionPattern: ""
+            StatusCode: "200"
+        PassthroughBehavior: "WHEN_NO_MATCH"
+        RequestTemplates:
+          "application/json": '{"statusCode": 200}'
+        TimeoutInMillis: 29000
+        Type: "MOCK"
+
+  ApiGatewayMethod4:
+    Type: "AWS::ApiGateway::Method"
+    Properties:
+      RestApiId: !Ref ApiGatewayRestApi
+      ResourceId: !Ref ApiGatewayResourceSearch
+      HttpMethod: "GET"
+      AuthorizationType: "NONE"
+      ApiKeyRequired: true
+      OperationName: "searchPhotos"
+      RequestParameters:
+        "method.request.header.x-api-key": true
+        "method.request.querystring.keyword": true
+      MethodResponses:
+        - ResponseModels:
+            "application/json": "SearchResponse"
+          ResponseParameters:
+            "method.response.header.Access-Control-Allow-Origin": false
+          StatusCode: "200"
+        - ResponseModels:
+            "application/json": "Error"
+          StatusCode: "403"
+        - ResponseModels:
+            "application/json": "Error"
+          StatusCode: "500"
+      Integration:
+        CacheNamespace: "4vurpg"
+        ContentHandling: "CONVERT_TO_TEXT"
+        Credentials: !Sub "arn:aws:iam::${AWS::AccountId}:role/ApiGatewayS3Access"
+        IntegrationHttpMethod: "POST"
+        IntegrationResponses:
+          - ResponseParameters:
+              "method.response.header.Access-Control-Allow-Origin": "'*'"
+            ResponseTemplates: {}
+            StatusCode: "200"
+        PassthroughBehavior: "WHEN_NO_MATCH"
+        TimeoutInMillis: 29000
+        Type: "AWS_PROXY"
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${LambdaFunction}/invocations"
+
+  IAMManagedPolicyServiceRoleAWSLambdaBasicExecutionRole:
     UpdateReplacePolicy: "Retain"
     Type: "AWS::IAM::ManagedPolicy"
     DeletionPolicy: "Retain"
     Properties:
-      ManagedPolicyName: "AWSLambdaBasicExecutionRole-ab2ab0ae-ee5f-48c2-b010-58d0f6a88bad"
+      ManagedPolicyName: "AWSLambdaBasicExecutionRole-4329bf1e-4709-448b-99cc-9fb6b79d08b9"
       Path: "/service-role/"
       Description: ""
       Groups: []
@@ -478,7 +312,138 @@ Resources:
           Action: "logs:CreateLogGroup"
           Effect: "Allow"
         - Resource:
-          - "arn:aws:logs:us-east-1:550673492243:log-group:/aws/lambda/index-photo-v2:*"
+          - "arn:aws:logs:us-east-1:550673492243:log-group:/aws/lambda/search-photo-v2-test:*"
+          Action:
+          - "logs:CreateLogStream"
+          - "logs:PutLogEvents"
+          Effect: "Allow"
+      Roles:
+      - "search-photo-v2-role-9v8ihtws"
+      Users: []
+
+  IAMRoleSearchPhotoV2Role:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::IAM::Role"
+    DeletionPolicy: "Retain"
+    Properties:
+      Path: "/service-role/"
+      ManagedPolicyArns:
+      - Ref: "IAMManagedPolicyServiceRoleAWSLambdaBasicExecutionRole"
+      - "arn:aws:iam::aws:policy/AmazonLexFullAccess"
+      MaxSessionDuration: 3600
+      RoleName: "search-photo-v2-role-9v8ihtws-test"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Action: "sts:AssumeRole"
+          Effect: "Allow"
+          Principal:
+            Service: "lambda.amazonaws.com"
+
+  LambdaFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Role:
+        Fn::GetAtt:
+        - "IAMRoleSearchPhotoV2Role"
+        - "Arn"
+      Description: ""
+      FunctionName: "search-photo-v2-test"
+      Handler: "LF2/lambda_function.lambda_handler"
+      Architectures:
+        - "x86_64"
+      Runtime: "python3.12"
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          import requests
+          from requests.auth import HTTPBasicAuth
+
+          def lambda_handler(event, context):
+              lex = boto3.client('lex-runtime')
+              query_text = event['queryStringParameters']['keyword']
+              lex_response = lex.post_text(
+                  botName='PhotoAlbumBot',
+                  botAlias='dev',
+                  userId='test',
+                  inputText= query_text
+              )
+              
+              keywordA = lex_response['slots']['keywordA']
+              keywordB = lex_response['slots']['keywordB']
+              print(keywordA)
+              print(keywordB)
+              if (keywordA is None):
+                  return {'statusCode': 404, 'body': 'Keyword not found'}
+              
+              es_query = {
+                  "query": {
+                  "match": {
+                      "labels": keywordA,
+                  }
+                  }
+              }
+              if (keywordB is not None):    
+                  es_query = {
+                  "query": {
+                      "match": {
+                      "labels": {
+                          "query": keywordA + " " + keywordB,
+                          "operator": "and"
+                      }
+                      }
+                  }
+                  }
+              
+              headers: dict = {"Content-Type": "application/json"}
+              url: str = "https://search-ccphotoalbum-okobqcqxaiuu5do2ujtwm3o6iu.aos.us-east-1.on.aws" + "/" + "photos" + "/" + "_search"
+
+              auth = HTTPBasicAuth("ccphotoalbum","Ccphotoalbum@2024")
+              response = requests.get(url, headers=headers, json=es_query, auth=auth)
+              response.raise_for_status()
+              print(response.json())
+              
+              response = response.json()
+              result_count = response['hits']['total']['value']
+              if (result_count < 1):
+                  return {
+                  'statusCode': 404,
+                  'body': 'No images found'
+              }
+              image_set = set()
+              for doc in response['hits']['hits']:
+                  image_set.add('https://ccphotoalbum.s3.amazonaws.com/'+ doc['_source']['object_key'])
+                  
+              print(image_set)
+              print('test')
+              
+              return {
+                  'statusCode': 200,
+                  'headers': {
+                      'Access-Control-Allow-Origin': '*',
+                      'Access-Control-Allow-Methods': 'OPTIONS,POST,GET'
+                  },
+                  'body': json.dumps(list(image_set))
+              }
+
+  IAMManagedPolicyIndexServiceRoleAWSLambdaBasicExecutionRole:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::IAM::ManagedPolicy"
+    DeletionPolicy: "Retain"
+    Properties:
+      ManagedPolicyName: "AWSLambdaBasicExecutionRole-abcab0ae-ee5f-48c2-b010-58d0f6a88bad"
+      Path: "/service-role/"
+      Description: ""
+      Groups: []
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Resource: "arn:aws:logs:us-east-1:550673492243:*"
+          Action: "logs:CreateLogGroup"
+          Effect: "Allow"
+        - Resource:
+          - "arn:aws:logs:us-east-1:550673492243:log-group:/aws/lambda/index-photo-v2-test:*"
           Action:
           - "logs:CreateLogStream"
           - "logs:PutLogEvents"
@@ -486,41 +451,40 @@ Resources:
       Roles:
       - "index-photo-v2-role-q0bd47pi"
       Users: []
-  S3BucketCcphotoalbumfrontend:
+
+  IAMRoleIndexPhotoV2Role:
     UpdateReplacePolicy: "Retain"
-    Type: "AWS::S3::Bucket"
+    Type: "AWS::IAM::Role"
     DeletionPolicy: "Retain"
     Properties:
-      AccessControl: PublicRead
-      WebsiteConfiguration:
-        IndexDocument: "index.html"
-      PublicAccessBlockConfiguration:
-        RestrictPublicBuckets: false
-        IgnorePublicAcls: false
-        BlockPublicPolicy: false
-        BlockPublicAcls: false
-      BucketName: "ccphotoalbumfrontend"
-      OwnershipControls:
-        Rules:
-        - ObjectOwnership: "BucketOwnerEnforced"
-      BucketEncryption:
-        ServerSideEncryptionConfiguration:
-        - BucketKeyEnabled: true
-          ServerSideEncryptionByDefault:
-            SSEAlgorithm: "AES256"
-  LambdaFunctionIndexPhotoV2:
-    UpdateReplacePolicy: "Retain"
+      Path: "/service-role/"
+      ManagedPolicyArns:
+        - Ref: "IAMManagedPolicyIndexServiceRoleAWSLambdaBasicExecutionRole"
+        - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+        - "arn:aws:iam::aws:policy/AmazonRekognitionFullAccess"
+      MaxSessionDuration: 3600
+      RoleName: "index-photo-v2-role-q0bd47pi-test"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action: "sts:AssumeRole"
+            Effect: "Allow"
+            Principal:
+              Service: "lambda.amazonaws.com"
+
+  LambdaFunction2:
     Type: "AWS::Lambda::Function"
-    DeletionPolicy: "Retain"
     Properties:
-      MemorySize: 128
+      Role:
+        Fn::GetAtt:
+        - "IAMRoleIndexPhotoV2Role"
+        - "Arn"
       Description: ""
-      TracingConfig:
-        Mode: "PassThrough"
-      Timeout: 10
-      RuntimeManagementConfig:
-        UpdateRuntimeOn: "Auto"
+      FunctionName: "index-photo-v2-test"
       Handler: "LF1/lambda_function.lambda_handler"
+      Architectures:
+        - "x86_64"
+      Runtime: "python3.12"
       Code:
         ZipFile: |
           import json
@@ -576,20 +540,100 @@ Resources:
                   "statusCode": 200,
                   "body": json.dumps(response.json())
               }
-      Role:
-        Fn::GetAtt:
-        - "IAMRoleIndexPhotoV2Role"
-        - "Arn"
-      FileSystemConfigs: []
-      FunctionName: "index-photo-v2"
-      Runtime: "python3.12"
-      LoggingConfig:
-        LogFormat: "Text"
-        LogGroup: "/aws/lambda/index-photo-v2"
-      EphemeralStorage:
-        Size: 512
-      Architectures:
-      - "x86_64"
-Outputs:
-  WebsiteURL:
-    Value: !GetAtt S3BucketCcphotoalbumfrontend.WebsiteURL
+
+  LambdaPermission:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !GetAtt LambdaFunction2.Arn
+      Principal: "s3.amazonaws.com"
+      SourceArn: !Sub "arn:aws:s3:::${S3Bucket2}"
+
+  LambdaPermission2:
+    Type: "AWS::Lambda::Permission"
+    Properties:
+      Action: "lambda:InvokeFunction"
+      FunctionName: !GetAtt LambdaFunction.Arn
+      Principal: "apigateway.amazonaws.com"
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGatewayRestApi}/*/GET/search"
+
+  S3Bucket:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::S3::Bucket"
+    DeletionPolicy: "Retain"
+    Properties:
+      WebsiteConfiguration:
+        IndexDocument: "index.html"
+      PublicAccessBlockConfiguration:
+        RestrictPublicBuckets: false
+        IgnorePublicAcls: false
+        BlockPublicPolicy: false
+        BlockPublicAcls: false
+      BucketName: "ccphotoalbumfrontendtest"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - BucketKeyEnabled: true
+          ServerSideEncryptionByDefault:
+            SSEAlgorithm: "AES256"
+
+  BucketPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref LambdaFunction2
+      Principal: s3.amazonaws.com
+      SourceAccount: !Ref "AWS::AccountId"
+      SourceArn: !Sub "arn:aws:s3:::ccphotoalbumtest"
+
+  S3Bucket2:
+    UpdateReplacePolicy: "Retain"
+    Type: "AWS::S3::Bucket"
+    DeletionPolicy: "Retain"
+    Properties:
+      NotificationConfiguration:
+        QueueConfigurations: []
+        TopicConfigurations: []
+        LambdaConfigurations:
+        - Function:
+            Fn::GetAtt:
+            - "LambdaFunction2"
+            - "Arn"
+          Event: "s3:ObjectCreated:*"
+      PublicAccessBlockConfiguration:
+        RestrictPublicBuckets: false
+        IgnorePublicAcls: false
+        BlockPublicPolicy: false
+        BlockPublicAcls: false
+      BucketName: "ccphotoalbumtest"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - BucketKeyEnabled: true
+          ServerSideEncryptionByDefault:
+            SSEAlgorithm: "AES256"
+
+  S3BucketPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket: !Ref S3Bucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: "PublicReadGetObject"
+            Effect: "Allow"
+            Principal: "*"
+            Action: "s3:GetObject"
+            Resource: !Sub "arn:aws:s3:::${S3Bucket}/*"
+
+  S3BucketPolicy2:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+      Bucket: !Ref S3Bucket2
+      PolicyDocument:
+        Version: "2012-10-17"
+        Id: "Policy1712445739327"
+        Statement:
+          - Sid: "Stmt1712445730478"
+            Effect: "Allow"
+            Principal: "*"
+            Action: "s3:GetObject"
+            Resource: !Sub "arn:aws:s3:::${S3Bucket2}/*"
