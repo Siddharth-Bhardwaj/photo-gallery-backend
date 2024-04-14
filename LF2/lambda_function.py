@@ -4,6 +4,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 def lambda_handler(event, context):
+    print(event)
     lex = boto3.client('lex-runtime')
     query_text = event['queryStringParameters']['keyword']
     lex_response = lex.post_text(
